@@ -1,0 +1,46 @@
+---
+title: "Week 2 - Section"
+author: "Leilanie Rubinstein"
+date: "2025-04-08"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+library(ggpubr)
+```
+
+Water Balance 
+$$
+p = E + Q - \Delta S
+$$
+
+```{r}
+streamflow = function (precip, ET, dS=0) {
+  
+  if (class(precip)!="numeric") {stop(print("etc etc"))}
+  
+  Q = precip - ET + dS
+  
+  if (Q<0) {warning("q is negative")}
+  
+  return(Q)
+  
+}
+
+source("week2/R/streamflow.R")
+
+```
+
+```{r}
+df = data.frame(
+  day = seq(1, 1000),
+  P = rbeta(1000, 1, 100) * 100,
+  E = rbeta(1000, 1, 100) * 10,
+  S = rbeta(100, 1, 0.1)
+)
+
+pivot_df = pivot_longer(data = df, cols = !day, names_to = "variable", values_to = "values")
+```

@@ -1,0 +1,112 @@
+---
+title: "EDS 230 - Assignment 2"
+author: "Naomi Moraes & Leilanie Rubinstein"
+format: html
+editor_options: 
+  chunk_output_type: console
+---
+
+For this assignment, your goal is to implement a simple model of almond yield anomaly response to climate
+
+- Inputs: daily times series of minimum, maximum daily temperatures and precipitation
+- Outputs: maximum, minimum and mean yield anomoly for a input time series
+
+The Lobell et al. 2006 paper will be the source for the transfer function that you will use in your model; specifically look at the equations in table 2.
+
+Here are some ideas to think though. The climate data is going to need to be processed (e.g note that the model uses climate data from a particular month - you have ALL of the climate as daily data). Here are two possible model outlines to follow:
+
+1. Almond_model <- function(clim_var1, clim_var2, parameters) { }
+2. Almond_model <- function(clim, parameters) { }
+
+The first example is where the climate variables are separately input into the function - climate data is processed beforehand as part of model set up. The second is where a climate data frame is the input to the function and you extract the useful data from it as part of the model.
+
+You can pick which option you prefer (or try both) If you want a coding challenge, you could create a model that works for any crop.
+
+Run your model for the clim.txt data that is posted on Canvas
+
+`clim.txt` has the following columns: 
+
+These 4 columns tell you when climate observations were made
+
+- day
+- month
+- year
+- wy (water year)
+
+The next 3 columns are the climate observations
+
+- maximum (tmax_c) daily temperature
+- minimum (tmin_c) daily temperature
+- precipitation (precip) on that day in mm
+
+```{r}
+# Load libraries
+library(tidyverse)
+```
+
+```{r}
+# Import climate data
+clim <- read_delim(here::here("week2", "data", "clim.txt"))
+```
+
+$$
+Y = -0.015 T _{n,2} - 0.0046 T _{n,2} ^2 - 0.07 P _1 + 0.0043 P _1 ^2 + 0.28
+$$
+
+```{r}
+almond_yield <- function(clim, t1 = -0.015, t2 = -0.0046, p1 = -0.07, p2 = 0.0043, c = 0.28) {
+  
+  # Find minimum Februrary temperature for each year
+  min_temp_feb <- clim %>%
+    filter(month == 2) %>%
+    group_by(year) %>%
+    summarise(feb_min_temp = min(tmin_c)) %>%
+    ungroup()
+  
+  # Find January precipitation total for each year
+  precip_jan <- clim %>%
+    filter(month == 1) %>%
+    group_by(year) %>%
+    summarise(jan_precip = sum(precip)) %>%
+    ungroup()
+  
+  # Join climate variables
+  joined <- left_join(min_temp_feb, precip_jan)
+  
+  # Calculate almond yield using climate variables
+  results <- joined %>%
+    mutate(yield = 
+             t1*feb_min_temp + 
+             t2*feb_min_temp^2 + 
+             p1*jan_precip + 
+             p2*jan_precip^2 +
+             c)
+  
+  # Calculate yield anomalies
+  results <- results %>%
+    summarise(min_yield = min(yield), max_yield = max(yield), mean_yield = mean(yield))
+}
+
+# Call the almond yield function
+almond_yield_anomalies <- almond_yield(clim = clim)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
